@@ -5,6 +5,27 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-12-28
+
+### Added
+- **Real-time Streaming Output** - Claude's output now streams live using `--output-format stream-json`
+  - Parses JSON stream in real-time to display text, tool calls, and results
+  - Shows `[Tool: name]` when Claude uses a tool
+  - Shows `[Session complete]` when done
+- **Vibe Kanban Dashboard** - Integrated visual task board (enabled by default)
+  - Auto-starts Vibe Kanban web UI at `http://127.0.0.1:57374`
+  - Tasks sync every 5 seconds from Loki queues to Kanban board
+  - Disable with `LOKI_VIBE_KANBAN=false`
+  - Configure port with `LOKI_KANBAN_PORT=<port>`
+
+### Changed
+- Replaced `--print` mode with `--output-format stream-json --verbose` for proper streaming
+- Python-based JSON parser extracts and displays Claude's responses in real-time
+- Kanban sync runs in background alongside status monitor
+
+### Fixed
+- Live output now actually streams (was buffered until completion in 2.4.0)
+
 ## [2.4.0] - 2025-12-28
 
 ### Added

@@ -13,6 +13,8 @@
 #   LOKI_BASE_WAIT      - Base wait time in seconds (default: 60)
 #   LOKI_MAX_WAIT       - Max wait time in seconds (default: 3600)
 #   LOKI_SKIP_PREREQS   - Skip prerequisite checks (default: false)
+#   LOKI_VIBE_KANBAN    - Enable Vibe Kanban UI (default: true)
+#   LOKI_KANBAN_PORT    - Vibe Kanban port (default: 57374)
 #===============================================================================
 
 set -uo pipefail
@@ -25,7 +27,11 @@ MAX_RETRIES=${LOKI_MAX_RETRIES:-50}
 BASE_WAIT=${LOKI_BASE_WAIT:-60}
 MAX_WAIT=${LOKI_MAX_WAIT:-3600}
 SKIP_PREREQS=${LOKI_SKIP_PREREQS:-false}
+VIBE_KANBAN=${LOKI_VIBE_KANBAN:-true}
+KANBAN_PORT=${LOKI_KANBAN_PORT:-57374}
 STATUS_MONITOR_PID=""
+KANBAN_PID=""
+KANBAN_SYNC_PID=""
 
 # Colors
 RED='\033[0;31m'
@@ -274,6 +280,189 @@ stop_status_monitor() {
 }
 
 #===============================================================================
+# Vibe Kanban Integration
+#===============================================================================
+
+export_tasks_to_kanban() {
+    # Export Loki tasks to Vibe Kanban format
+    local export_dir=".loki/kanban"
+    mkdir -p "$export_dir"
+
+    python3 -u << 'PYTHON_EXPORT'
+import json
+import os
+from datetime import datetime
+
+loki_dir = ".loki"
+export_dir = ".loki/kanban"
+
+def get_phase():
+    try:
+        with open(f"{loki_dir}/state/orchestrator.json") as f:
+            return json.load(f).get("currentPhase", "UNKNOWN")
+    except:
+        return "UNKNOWN"
+
+def export_queue(queue_file, status):
+    try:
+        with open(queue_file) as f:
+            content = f.read().strip()
+            if not content or content == "[]":
+                return []
+            tasks = json.loads(content)
+            if isinstance(tasks, dict):
+                tasks = tasks.get("tasks", [])
+    except:
+        return []
+
+    exported = []
+    phase = get_phase()
+
+    for task in tasks:
+        task_id = task.get("id", "unknown")
+        payload = task.get("payload", {})
+        agent_type = task.get("type", "general")
+
+        # Map status
+        status_map = {
+            "pending": "todo",
+            "in-progress": "doing",
+            "completed": "done",
+            "failed": "blocked",
+            "dead-letter": "blocked"
+        }
+        vibe_status = status_map.get(status, "todo")
+
+        # Build title
+        action = payload.get("action", "") if isinstance(payload, dict) else ""
+        title = f"[{agent_type}] {action}" if action else f"[{agent_type}] Task"
+
+        # Build description
+        if isinstance(payload, dict):
+            desc = payload.get("description", json.dumps(payload, indent=2))
+        else:
+            desc = str(payload)
+
+        vibe_task = {
+            "id": f"loki-{task_id}",
+            "title": title[:80],
+            "description": desc[:500],
+            "status": vibe_status,
+            "agent": task.get("claimedBy", "unassigned"),
+            "tags": [agent_type, f"phase-{phase.lower()}", f"priority-{task.get('priority', 5)}"],
+            "createdAt": task.get("createdAt", datetime.utcnow().isoformat() + "Z"),
+            "metadata": {
+                "lokiId": task_id,
+                "lokiPhase": phase,
+                "retries": task.get("retries", 0),
+                "lastError": task.get("lastError")
+            }
+        }
+
+        # Write individual task file
+        with open(f"{export_dir}/{task_id}.json", "w") as out:
+            json.dump(vibe_task, out, indent=2)
+        exported.append(task_id)
+
+    return exported
+
+# Export all queues
+all_exported = []
+for queue in ["pending", "in-progress", "completed", "failed", "dead-letter"]:
+    queue_file = f"{loki_dir}/queue/{queue}.json"
+    if os.path.exists(queue_file):
+        all_exported.extend(export_queue(queue_file, queue))
+
+# Write summary
+summary = {
+    "exportedAt": datetime.utcnow().isoformat() + "Z",
+    "phase": get_phase(),
+    "taskCount": len(all_exported),
+    "tasks": all_exported
+}
+with open(f"{export_dir}/_summary.json", "w") as f:
+    json.dump(summary, f, indent=2)
+
+print(f"EXPORTED:{len(all_exported)}")
+PYTHON_EXPORT
+}
+
+start_kanban_server() {
+    log_header "Starting Vibe Kanban Dashboard"
+
+    # Check if npx is available
+    if ! command -v npx &> /dev/null; then
+        log_warn "npx not found - Vibe Kanban UI disabled"
+        log_info "Install Node.js to enable: brew install node"
+        return 1
+    fi
+
+    # Check if port is already in use
+    if lsof -i :$KANBAN_PORT &>/dev/null; then
+        log_info "Port $KANBAN_PORT already in use - Kanban may already be running"
+        log_info "Dashboard: ${CYAN}http://127.0.0.1:$KANBAN_PORT${NC}"
+        return 0
+    fi
+
+    # Create kanban data directory
+    mkdir -p .loki/kanban
+
+    # Start Vibe Kanban in background
+    log_step "Launching Vibe Kanban server..."
+
+    # Try to start vibe-kanban
+    (
+        cd .loki/kanban
+        npx vibe-kanban --port $KANBAN_PORT 2>&1 | while read line; do
+            echo "[kanban] $line" >> ../.loki/logs/kanban.log
+        done
+    ) &
+    KANBAN_PID=$!
+
+    # Wait for server to start
+    sleep 3
+
+    if kill -0 $KANBAN_PID 2>/dev/null; then
+        log_info "Vibe Kanban started (PID: $KANBAN_PID)"
+        log_info "Dashboard: ${CYAN}http://127.0.0.1:$KANBAN_PORT${NC}"
+        return 0
+    else
+        log_warn "Vibe Kanban failed to start - falling back to STATUS.txt"
+        KANBAN_PID=""
+        return 1
+    fi
+}
+
+start_kanban_sync() {
+    log_step "Starting task sync..."
+
+    # Initial export
+    export_tasks_to_kanban
+
+    # Background sync loop
+    (
+        while true; do
+            sleep 5
+            export_tasks_to_kanban 2>/dev/null || true
+        done
+    ) &
+    KANBAN_SYNC_PID=$!
+
+    log_info "Task sync started (every 5s)"
+}
+
+stop_kanban() {
+    if [ -n "$KANBAN_SYNC_PID" ]; then
+        kill "$KANBAN_SYNC_PID" 2>/dev/null || true
+        wait "$KANBAN_SYNC_PID" 2>/dev/null || true
+    fi
+    if [ -n "$KANBAN_PID" ]; then
+        kill "$KANBAN_PID" 2>/dev/null || true
+        wait "$KANBAN_PID" 2>/dev/null || true
+    fi
+}
+
+#===============================================================================
 # Calculate Exponential Backoff
 #===============================================================================
 
@@ -417,9 +606,73 @@ run_autonomous() {
         echo "=== Prompt: $prompt ===" >> "$log_file"
 
         set +e
-        # Run Claude with -p flag and --print for non-interactive mode
-        # The --print flag runs in headless mode without requiring a TTY
-        claude --dangerously-skip-permissions --print -p "$prompt" 2>&1 | tee -a "$log_file"
+        # Run Claude with stream-json for real-time output
+        # Parse JSON stream and display formatted output
+        claude --dangerously-skip-permissions -p "$prompt" \
+            --output-format stream-json --verbose 2>&1 | \
+            tee -a "$log_file" | \
+            python3 -u -c '
+import sys
+import json
+
+# ANSI colors
+CYAN = "\033[0;36m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[1;33m"
+MAGENTA = "\033[0;35m"
+DIM = "\033[2m"
+NC = "\033[0m"
+
+def process_stream():
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+            msg_type = data.get("type", "")
+
+            if msg_type == "assistant":
+                # Extract and print assistant text
+                message = data.get("message", {})
+                content = message.get("content", [])
+                for item in content:
+                    if item.get("type") == "text":
+                        text = item.get("text", "")
+                        if text:
+                            print(text, end="", flush=True)
+                    elif item.get("type") == "tool_use":
+                        tool = item.get("name", "unknown")
+                        print(f"\n{CYAN}[Tool: {tool}]{NC}", flush=True)
+
+            elif msg_type == "user":
+                # Tool results
+                content = data.get("message", {}).get("content", [])
+                for item in content:
+                    if item.get("type") == "tool_result":
+                        tool_id = item.get("tool_use_id", "")[:8]
+                        print(f"{DIM}[Result]{NC} ", end="", flush=True)
+
+            elif msg_type == "result":
+                # Session complete
+                print(f"\n{GREEN}[Session complete]{NC}", flush=True)
+                is_error = data.get("is_error", False)
+                sys.exit(1 if is_error else 0)
+
+        except json.JSONDecodeError:
+            # Not JSON, print as-is
+            print(line, flush=True)
+        except Exception as e:
+            print(f"{YELLOW}[Parse error: {e}]{NC}", file=sys.stderr)
+
+if __name__ == "__main__":
+    try:
+        process_stream()
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except BrokenPipeError:
+        sys.exit(0)
+'
         local exit_code=${PIPESTATUS[0]}
         set -e
 
@@ -485,6 +738,7 @@ run_autonomous() {
 cleanup() {
     echo ""
     log_warn "Received interrupt signal"
+    stop_kanban
     stop_status_monitor
     save_state ${RETRY_COUNT:-0} "interrupted" 130
     log_info "State saved. Run again to resume."
@@ -537,6 +791,15 @@ main() {
     # Initialize .loki directory
     init_loki_dir
 
+    # Start Vibe Kanban dashboard (if enabled)
+    if [ "$VIBE_KANBAN" = "true" ]; then
+        if start_kanban_server; then
+            start_kanban_sync
+        fi
+    else
+        log_info "Vibe Kanban disabled (LOKI_VIBE_KANBAN=false)"
+    fi
+
     # Start status monitor (background updates to .loki/STATUS.txt)
     start_status_monitor
 
@@ -545,6 +808,7 @@ main() {
     run_autonomous "$PRD_PATH" || result=$?
 
     # Cleanup
+    stop_kanban
     stop_status_monitor
 
     exit $result

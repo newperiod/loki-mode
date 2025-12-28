@@ -1,7 +1,7 @@
 # Loki Mode - Conversation Context Export
 
 **Date:** 2025-12-28
-**Version:** 2.4.0
+**Version:** 2.5.0
 **Repository:** https://github.com/asklokesh/claudeskill-loki-mode
 
 ---
@@ -115,6 +115,7 @@ echo "$prompt" | claude --dangerously-skip-permissions
 
 | Version | Key Changes |
 |---------|-------------|
+| 2.5.0 | Real streaming output (stream-json), Vibe Kanban dashboard |
 | 2.4.0 | Live output fix (stdin pipe), STATUS.txt monitor |
 | 2.3.0 | Unified autonomy runner (`autonomy/run.sh`) |
 | 2.2.0 | Vibe Kanban integration |
@@ -198,7 +199,7 @@ When starting a new session, read these files:
 
 ## Last Known State
 
-- **Version:** 2.4.0
-- **Latest Commit:** 008ed86 (Fix TTY raw mode error)
+- **Version:** 2.5.0
+- **Latest Commit:** (pending push)
 - **Tests:** All 53 passing
-- **Main Issue Being Worked On:** Live output from Claude during autonomous execution
+- **Features Added:** Real-time streaming output via stream-json, integrated Vibe Kanban dashboard
