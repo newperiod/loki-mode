@@ -38,18 +38,25 @@ jobs:
       - name: Create release artifact
         if: steps.check_tag.outputs.exists == 'false'
         run: |
-          # Create a clean directory for the release
-          mkdir -p release/loki-mode-${{ steps.version.outputs.version }}
+          # Create skill directory with the name Claude Code expects
+          mkdir -p release/loki-mode
 
-          # Copy all files except .git
-          rsync -av --exclude='.git' --exclude='release' . release/loki-mode-${{ steps.version.outputs.version }}/
+          # Copy only the skill files (not .git, release folder, or GitHub workflows)
+          cp SKILL.md release/loki-mode/
+          cp README.md release/loki-mode/
+          cp LICENSE release/loki-mode/
+          cp VERSION release/loki-mode/
+          cp CHANGELOG.md release/loki-mode/
+          cp -r references release/loki-mode/
+          cp -r examples release/loki-mode/
+          cp -r tests release/loki-mode/
 
-          # Create zip file
+          # Create zip file (loki-mode/ folder inside)
           cd release
-          zip -r loki-mode-${{ steps.version.outputs.version }}.zip loki-mode-${{ steps.version.outputs.version }}
+          zip -r loki-mode-${{ steps.version.outputs.version }}.zip loki-mode
 
           # Create tarball
-          tar -czvf loki-mode-${{ steps.version.outputs.version }}.tar.gz loki-mode-${{ steps.version.outputs.version }}
+          tar -czvf loki-mode-${{ steps.version.outputs.version }}.tar.gz loki-mode
 
       - name: Create Git Tag
         if: steps.check_tag.outputs.exists == 'false'

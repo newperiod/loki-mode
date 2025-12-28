@@ -77,17 +77,21 @@ claudeskill-loki-mode/
 
 1. Go to [Releases](https://github.com/asklokesh/claudeskill-loki-mode/releases)
 2. Download the latest `loki-mode-X.X.X.zip`
-3. Extract and copy to your skills directory:
+3. Extract to your skills directory:
 
 ```bash
 # For personal use (all projects)
-unzip loki-mode-*.zip
-mv loki-mode-*/ ~/.claude/skills/loki-mode
+cd ~/.claude/skills
+unzip ~/Downloads/loki-mode-*.zip
+# Creates: ~/.claude/skills/loki-mode/SKILL.md
 
 # For a specific project only
-unzip loki-mode-*.zip
-mv loki-mode-*/ .claude/skills/loki-mode
+cd /path/to/your/project/.claude/skills
+unzip ~/Downloads/loki-mode-*.zip
+# Creates: .claude/skills/loki-mode/SKILL.md
 ```
+
+The zip contains a `loki-mode/` folder with the correct structure - just extract directly.
 
 ### Option 2: Git Clone
 
