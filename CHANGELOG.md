@@ -5,6 +5,18 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.1] - 2026-01-01
+
+### Fixed
+- **API Console Upload** - Added `loki-mode-api-X.X.X.zip` artifact for console.anthropic.com
+  - API requires SKILL.md inside a folder wrapper (`loki-mode/SKILL.md`)
+  - Claude.ai uses flat structure (`SKILL.md` at root)
+  - Updated release workflow to generate both formats
+  - Three release artifacts now available:
+    - `loki-mode-X.X.X.zip` - for Claude.ai website
+    - `loki-mode-api-X.X.X.zip` - for console.anthropic.com
+    - `loki-mode-claude-code-X.X.X.zip` - for Claude Code CLI
+
 ## [2.10.0] - 2025-12-31
 
 ### Added
@@ -34,12 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Philosophy
 Instead of "degrade gracefully through compression", Loki Mode now uses "reset cleanly with memory preservation" - ensuring perfect context continuity across unlimited iterations.
-
-### Fixed
-- **API Console Upload** - Added `loki-mode-api-X.X.X.zip` artifact for console.anthropic.com
-  - API requires SKILL.md inside a folder wrapper (`loki-mode/SKILL.md`)
-  - Claude.ai uses flat structure (`SKILL.md` at root)
-  - Updated release workflow to generate both formats
 
 ## [2.9.1] - 2025-12-31
 
