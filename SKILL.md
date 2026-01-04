@@ -5,7 +5,7 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.16.0** | PRD → Production | Zero Human Intervention
+> **Version 2.17.0** | PRD → Production | Zero Human Intervention
 
 ---
 
@@ -475,6 +475,313 @@ Task(
 2. Add to failed queue with detailed feedback
 3. Re-dispatch with stricter constraints
 4. Update CONTINUITY.md with anti-pattern to avoid
+
+## Git Checkpoint System
+
+**CRITICAL:** Every completed task MUST create a git checkpoint for rollback safety and progress tracking.
+
+### Protocol: Automatic Commits After Task Completion
+
+**RULE:** When `task.status == "completed"`, create a git commit immediately.
+
+```bash
+# Git Checkpoint Protocol
+ON_TASK_COMPLETE() {
+    task_id=$1
+    task_title=$2
+    agent_id=$3
+
+    # Stage modified files
+    git add <modified_files>
+
+    # Create structured commit message
+    git commit -m "[Loki] ${agent_type}-${task_id}: ${task_title}
+
+${detailed_description}
+
+Agent: ${agent_id}
+Parent: ${parent_agent_id}
+Spec: ${spec_reference}
+Tests: ${test_files}
+Git-Checkpoint: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    # Store commit SHA in task metadata
+    commit_sha=$(git rev-parse HEAD)
+    update_task_metadata task_id git_commit_sha "$commit_sha"
+
+    # Update CONTINUITY.md
+    echo "- Task $task_id completed (commit: $commit_sha)" >> .loki/CONTINUITY.md
+}
+```
+
+### Commit Message Format
+
+**Template:**
+```
+[Loki] ${agent_type}-${task_id}: ${task_title}
+
+${detailed_description}
+
+Agent: ${agent_id}
+Parent: ${parent_agent_id}
+Spec: ${spec_reference}
+Tests: ${test_files}
+Git-Checkpoint: ${timestamp}
+```
+
+**Example:**
+```
+[Loki] eng-005-backend: Implement POST /api/todos endpoint
+
+Created todo creation endpoint per OpenAPI spec.
+- Input validation for title field
+- SQLite insertion with timestamps
+- Returns 201 with created todo object
+- Contract tests passing
+
+Agent: eng-001-backend-api
+Parent: orchestrator-main
+Spec: .loki/specs/openapi.yaml#/paths/~1api~1todos/post
+Tests: backend/tests/todos.contract.test.ts
+Git-Checkpoint: 2026-01-04T05:45:00Z
+```
+
+### Rollback Strategy
+
+**When to Rollback:**
+- Quality gates fail after merge
+- Integration tests fail
+- Security vulnerabilities detected
+- Breaking changes discovered
+
+**Rollback Command:**
+```bash
+# Find last good checkpoint
+last_good_commit=$(git log --grep="\[Loki\].*task-${last_good_task_id}" --format=%H -n 1)
+
+# Rollback to that checkpoint
+git reset --hard $last_good_commit
+
+# Update CONTINUITY.md
+echo "ROLLBACK: Reset to task-${last_good_task_id} (commit: $last_good_commit)" >> .loki/CONTINUITY.md
+
+# Re-queue failed tasks
+move_tasks_to_pending after_task=$last_good_task_id
+```
+
+### Benefits
+
+1. **Instant Rollback:** Every task is a save point
+2. **Clear History:** Git log shows exact task progression
+3. **Proof of Progress:** Commit SHAs in CONTINUITY.md
+4. **Blame Tracking:** Know which agent created which code
+5. **Audit Trail:** Full history of what changed when
+
+## Agent Lineage & Context Preservation
+
+**CRITICAL:** All agents MUST inherit and preserve context from their spawning agent to prevent context drift.
+
+### Lineage Tracking Protocol
+
+**On Agent Spawn:**
+```typescript
+// When spawning a new agent
+function spawnAgent(config: {
+    agent_type: string,
+    task_id: string,
+    parent_agent_id: string
+}) {
+    const agent_id = generateAgentId(); // e.g., "eng-001-backend-api"
+
+    // Inherit context from parent
+    const parent_context = readAgentContext(config.parent_agent_id);
+
+    const agent_context = {
+        agent_id,
+        agent_type: config.agent_type,
+        model: config.model || "sonnet",
+        spawned_at: new Date().toISOString(),
+        spawned_by: config.parent_agent_id,
+        lineage: [...parent_context.lineage, agent_id],
+
+        // Inherited context (immutable)
+        inherited_context: {
+            phase: parent_context.phase,
+            current_task: config.task_id,
+            spec_reference: parent_context.spec_reference,
+            tech_stack: parent_context.tech_stack,
+            architecture_decisions: parent_context.architecture_decisions,
+            constraints: parent_context.constraints
+        },
+
+        // Agent-specific context (mutable)
+        decisions_made: [],
+        tasks_completed: [],
+        commits_created: [],
+        questions_asked: [],
+
+        status: "spawned"
+    };
+
+    // Write to .agent/sub-agents/
+    fs.writeFileSync(
+        `.agent/sub-agents/${agent_id}.json`,
+        JSON.stringify(agent_context, null, 2)
+    );
+
+    // Update lineage tree
+    updateLineageTree(agent_id, config.parent_agent_id);
+
+    return agent_id;
+}
+```
+
+### Agent Context Schema
+
+**File:** `.agent/sub-agents/{agent-id}.json`
+
+```json
+{
+  "agent_id": "eng-001-backend-api",
+  "agent_type": "general-purpose",
+  "model": "haiku",
+  "spawned_at": "2026-01-04T05:30:00Z",
+  "spawned_by": "orchestrator-main",
+  "lineage": ["orchestrator-main", "eng-001-backend-api"],
+
+  "inherited_context": {
+    "phase": "development",
+    "current_task": "task-005",
+    "spec_reference": ".loki/specs/openapi.yaml#/paths/~1api~1todos",
+    "tech_stack": ["Node.js", "Express", "TypeScript", "SQLite"],
+    "architecture_decisions": [
+      "Use REST over GraphQL for simplicity",
+      "Use SQLite for zero-config persistence"
+    ],
+    "constraints": [
+      "No external dependencies without approval",
+      "Maximum 200ms response time",
+      "100% test coverage on critical paths"
+    ]
+  },
+
+  "decisions_made": [
+    {
+      "timestamp": "2026-01-04T05:31:15Z",
+      "question": "Should we use Prisma or raw SQL?",
+      "answer": "Raw SQL with better-sqlite3",
+      "rationale": "PRD requires minimal dependencies, synchronous ops preferred",
+      "alternatives_considered": ["Prisma", "TypeORM", "Knex.js"]
+    }
+  ],
+
+  "tasks_completed": ["task-005", "task-006"],
+  "commits_created": ["abc123f", "def456a"],
+  "questions_asked": [
+    {
+      "timestamp": "2026-01-04T05:30:30Z",
+      "question": "Should todos have due dates?",
+      "answer": "No - keeping MVP minimal per PRD",
+      "source": "inferred_from_prd"
+    }
+  ],
+
+  "status": "completed",
+  "completed_at": "2026-01-04T05:45:00Z"
+}
+```
+
+### Lineage Tree Structure
+
+**File:** `.agent/lineage.json`
+
+```json
+{
+  "orchestrator-main": {
+    "spawned_at": "2026-01-04T05:00:00Z",
+    "children": [
+      "eng-001-backend-api",
+      "eng-002-frontend-ui",
+      "qa-001-contract-tests"
+    ]
+  },
+  "eng-001-backend-api": {
+    "spawned_at": "2026-01-04T05:30:00Z",
+    "parent": "orchestrator-main",
+    "children": []
+  },
+  "eng-002-frontend-ui": {
+    "spawned_at": "2026-01-04T06:00:00Z",
+    "parent": "orchestrator-main",
+    "children": [
+      "eng-003-component-library"
+    ]
+  }
+}
+```
+
+### Context Preservation Rules
+
+1. **Immutable Inheritance:** Agents CANNOT modify inherited context
+2. **Decision Logging:** All decisions MUST be logged to agent context file
+3. **Lineage Reference:** All commits MUST reference parent agent ID
+4. **Question Tracking:** Agents MUST log clarifying questions and answers
+5. **Context Handoff:** When agent completes, context is archived but lineage preserved
+
+### Preventing Context Drift
+
+**Problem:** Multiple agents with inconsistent understanding of project state.
+
+**Solution:**
+1. Read `.agent/sub-agents/${parent_id}.json` before spawning
+2. Inherit immutable context (tech stack, constraints, decisions)
+3. Log all new decisions to own context file
+4. Reference lineage in all commits
+5. Periodic context sync: check if inherited context has been updated upstream
+
+### Benefits
+
+1. **No Context Drift:** All agents see same project state
+2. **Decision Auditability:** Know why every choice was made
+3. **Blame Chain:** Trace decisions back to spawning agent
+4. **Learning:** Successor agents see previous agents' decisions
+5. **Debugging:** Full context trail for troubleshooting
+
+## Constitution: Machine-Enforceable Rules
+
+**CRITICAL:** All agent behavior is governed by `autonomy/CONSTITUTION.md` - a machine-enforceable contract.
+
+### Core Principles (Reference Only - Full Details in CONSTITUTION.md)
+
+1. **Specification-First Development:** No code before spec exists
+2. **Git Checkpoint System:** Every task completion creates commit
+3. **Context Preservation:** All agents inherit from parent
+4. **Iterative Specification Questions:** Ask before assuming
+5. **Machine-Readable Rules:** JSON/YAML over markdown prose
+
+### Quality Gates (From Constitution)
+
+**Pre-Commit (BLOCKING):**
+- Linting (auto-fix enabled)
+- Type checking (strict mode)
+- Contract tests (80% coverage minimum)
+- Spec validation (Spectral)
+
+**Post-Implementation (AUTO-FIX):**
+- Static analysis (ESLint, Prettier, TSC)
+- Security scan (Semgrep, Snyk)
+- Performance check (Lighthouse score 90+)
+
+### Runtime Invariants
+
+All agents MUST pass these assertions:
+- `SPEC_BEFORE_CODE`: Implementation tasks require spec reference
+- `TASK_HAS_COMMIT`: Completed tasks have git commit SHA
+- `AGENT_HAS_LINEAGE`: All agents have lineage array
+- `CONTINUITY_EXISTS`: CONTINUITY.md must always exist
+- `QUALITY_GATES_PASSED`: Completed tasks passed all quality checks
+
+**See:** `autonomy/CONSTITUTION.md` for full behavioral contract.
 
 ## Spec-Driven Development (SDD)
 
@@ -2478,6 +2785,10 @@ done
 │   ├── openapi.yaml             # OpenAPI 3.1 specification (source of truth)
 │   ├── graphql.schema           # GraphQL schema (if applicable)
 │   ├── asyncapi.yaml            # AsyncAPI for events/websockets
+│   ├── diagrams/                # Visual specification aids (Mermaid)
+│   │   ├── architecture.mmd
+│   │   ├── auth-flow.mmd
+│   │   └── {feature-name}.mmd
 │   └── postman-collection.json  # Auto-generated from OpenAPI
 ├── mcp/                         # Model Context Protocol
 │   ├── servers/                 # MCP server implementations
@@ -2489,10 +2800,22 @@ done
 │   ├── orchestrator.ts          # MCP client coordinator
 │   ├── registry.yaml            # GitHub MCP Registry manifest
 │   └── external-integrations.ts # Third-party MCP servers
+├── .agent/                      # Agent lineage and context
+│   ├── sub-agents/              # Per-agent context files
+│   │   ├── orchestrator-main.json
+│   │   ├── eng-001-backend.json
+│   │   ├── eng-002-frontend.json
+│   │   └── {agent-id}.json
+│   └── lineage.json             # Agent spawn tree
 ├── hooks/                       # Quality gate hooks
 │   ├── pre-write.sh             # Block writes that violate rules
 │   ├── post-write.sh            # Auto-fix after writes (type check, format)
 │   └── post-write-deduplicate.sh # Duplicate code detection
+├── rules/                       # Machine-enforceable rules
+│   ├── pre-commit.schema.json   # Validation schemas
+│   ├── quality-gates.yaml       # Quality thresholds
+│   ├── agent-contracts.json     # Agent responsibilities
+│   └── invariants.ts            # Runtime assertions
 ├── plans/                       # Implementation plans (Plan Mode output)
 │   └── task-{id}.md             # Detailed plan before implementation
 ├── state/
@@ -2552,7 +2875,7 @@ set -euo pipefail
 LOKI_ROOT=".loki"
 
 # Create directory structure
-mkdir -p "$LOKI_ROOT"/{specs,mcp/servers,hooks,plans,state/{agents,checkpoints,locks},queue,messages/{inbox,outbox,broadcast},logs/{agents,decisions,archive,static-analysis},config,prompts,artifacts/{releases,reports,metrics,backups},scripts}
+mkdir -p "$LOKI_ROOT"/{specs/diagrams,.agent/sub-agents,mcp/servers,hooks,rules,plans,state/{agents,checkpoints,locks},queue,messages/{inbox,outbox,broadcast},logs/{agents,decisions,archive,static-analysis},config,prompts,artifacts/{releases,reports,metrics,backups},scripts}
 
 # Initialize queue files
 for f in pending in-progress completed failed dead-letter; do

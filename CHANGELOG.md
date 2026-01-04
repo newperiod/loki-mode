@@ -5,6 +5,74 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.0] - 2026-01-04
+
+### Added
+- **Git Checkpoint System** - Automatic commit protocol for rollback safety (SKILL.md:479-578):
+  - Automatic git commit after every completed task
+  - Structured commit message format with agent metadata
+  - [Loki] prefix for easy filtering in git log
+  - Commit SHA tracking in task metadata and CONTINUITY.md
+  - Rollback strategy for quality gate failures
+  - Benefits: Instant rollback, clear history, audit trail
+
+- **Agent Lineage & Context Preservation** - Prevent context drift across multi-agent execution (SKILL.md:580-748):
+  - `.agent/sub-agents/` directory structure for per-agent context files
+  - Agent context schema with inherited_context (immutable) and agent-specific context (mutable)
+  - Lineage tracking: every agent knows its parent and children
+  - Decision logging: all choices logged with rationale and alternatives
+  - Question tracking: clarifying questions and answers preserved
+  - Context handoff protocol when agent completes
+  - Lineage tree in `.agent/lineage.json` for full spawn hierarchy
+
+- **CONSTITUTION.md** - Machine-enforceable behavioral contract (autonomy/CONSTITUTION.md):
+  - 5 core inviolable principles with enforcement logic
+  - Agent behavioral contracts (orchestrator, engineering, QA, DevOps)
+  - Quality gates as YAML configs (pre-commit blocking, post-implementation auto-fix)
+  - Memory hierarchy (CONTINUITY.md → CONSTITUTION.md → CLAUDE.md → Ledgers → Agent context)
+  - Context lineage schema with JSON structure
+  - Git checkpoint protocol integration
+  - Runtime invariants (TypeScript assertions)
+  - Amendment process for constitution versioning
+
+- **Visual Specification Aids** - Mermaid diagram generation requirement (SKILL.md:481-485, CONSTITUTION.md):
+  - `.loki/specs/diagrams/` directory for Mermaid diagrams
+  - Required for complex features (3+ steps, architecture changes, state machines, integrations)
+  - Examples: authentication flows, system architecture, multi-step workflows
+  - Prevents ambiguity in AI-to-AI communication
+
+- **Machine-Readable Rules** - Structured artifacts over markdown (SKILL.md:2507-2511):
+  - `.loki/rules/` directory for enforceable contracts
+  - `pre-commit.schema.json` - Validation schemas
+  - `quality-gates.yaml` - Quality thresholds
+  - `agent-contracts.json` - Agent responsibilities
+  - `invariants.ts` - Runtime assertions
+
+### Changed
+- **Directory Structure** - Enhanced with new agent and rules directories (SKILL.md:2475-2541):
+  - Added `.agent/sub-agents/` for agent context tracking
+  - Added `.agent/lineage.json` for spawn tree
+  - Added `.loki/specs/diagrams/` for Mermaid diagrams
+  - Added `.loki/rules/` for machine-enforceable contracts
+- **Bootstrap Script** - Updated to create new directories (SKILL.md:2571)
+- **Quick Reference** - Added references to CONSTITUTION.md and agent lineage
+
+### Inspired By
+This release incorporates best practices from AI infrastructure thought leaders:
+- **Ivan Steshov** - Centralized constitution, agent lineage tracking, structured artifacts as contracts
+- **Addy Osmani** - Git as checkpoint system, specification-first approach, visual aids (Mermaid diagrams)
+- **Community Consensus** - Machine-enforceable rules over advisory markdown
+
+### Breaking Changes
+None - All additions are backward compatible with existing Loki Mode projects.
+
+### Migration Guide
+For existing `.loki/` projects:
+1. Run updated bootstrap script to create new directories
+2. Copy `autonomy/CONSTITUTION.md` to your project
+3. Optional: Enable git checkpoint protocol in orchestrator
+4. Optional: Enable agent lineage tracking for context preservation
+
 ## [2.16.0] - 2026-01-02
 
 ### Added
