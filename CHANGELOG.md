@@ -5,6 +5,38 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.0] - 2026-01-05
+
+### Added - Official SWE-bench Submission Support
+
+**Full trajectory logging and submission preparation for official SWE-bench leaderboard!**
+
+**New Features:**
+- **Trajectory Logging**: Full reasoning traces saved to `trajs/` directory
+  - Complete prompts and outputs for each agent step
+  - Timestamps and durations for performance analysis
+  - QA validation checks recorded
+- **Execution Logs**: Per-problem logs saved to `logs/` directory
+  - `patch.diff` - Generated patch file
+  - `report.json` - Execution metadata
+  - `test_output.txt` - Test results placeholder
+- **Submission Template**: Ready-to-use files for SWE-bench/experiments PR
+  - `metadata.yaml` - Submission metadata
+  - `README.md` - System description
+- **Prepare Submission Script**: `./benchmarks/prepare-submission.sh`
+  - Converts benchmark results to official submission format
+  - Generates JSONL predictions file
+  - Creates submission checklist
+
+**Usage:**
+```bash
+# Run benchmark with trajectory logging
+./benchmarks/run-benchmarks.sh swebench --execute --loki
+
+# Prepare submission from results
+./benchmarks/prepare-submission.sh benchmarks/results/YYYY-MM-DD-HH-MM-SS
+```
+
 ## [2.25.0] - 2026-01-05
 
 ### Added - Loki Mode SWE-bench Benchmark (99.67% Patch Generation)
