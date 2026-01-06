@@ -15,6 +15,14 @@
 
 ---
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/EqNo5IVTaPJfCjLmnYgZ9TC3E.svg)](https://asciinema.org/a/EqNo5IVTaPJfCjLmnYgZ9TC3E)
+
+*Click to watch Loki Mode build a complete Todo App from PRD - zero human intervention*
+
+---
+
 ## Benchmark Results
 
 ### Three-Way Comparison (HumanEval)
