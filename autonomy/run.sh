@@ -1564,13 +1564,15 @@ run_autonomous() {
 
         set +e
         # Run Claude with stream-json for real-time output
-        # Parse JSON stream and display formatted output
+        # Parse JSON stream, display formatted output, and track agents
         claude --dangerously-skip-permissions -p "$prompt" \
             --output-format stream-json --verbose 2>&1 | \
             tee -a "$log_file" | \
             python3 -u -c '
 import sys
 import json
+import os
+from datetime import datetime
 
 # ANSI colors
 CYAN = "\033[0;36m"
@@ -1580,7 +1582,45 @@ MAGENTA = "\033[0;35m"
 DIM = "\033[2m"
 NC = "\033[0m"
 
+# Agent tracking
+AGENTS_FILE = ".loki/state/agents.json"
+QUEUE_IN_PROGRESS = ".loki/queue/in-progress.json"
+active_agents = {}  # tool_id -> agent_info
+
+def load_agents():
+    """Load existing agents from file."""
+    try:
+        if os.path.exists(AGENTS_FILE):
+            with open(AGENTS_FILE, "r") as f:
+                data = json.load(f)
+                return {a.get("tool_id", a.get("agent_id")): a for a in data if isinstance(a, dict)}
+    except:
+        pass
+    return {}
+
+def save_agents():
+    """Save agents to file for dashboard."""
+    try:
+        os.makedirs(os.path.dirname(AGENTS_FILE), exist_ok=True)
+        agents_list = list(active_agents.values())
+        with open(AGENTS_FILE, "w") as f:
+            json.dump(agents_list, f, indent=2)
+    except Exception as e:
+        print(f"{YELLOW}[Agent save error: {e}]{NC}", file=sys.stderr)
+
+def save_in_progress(tasks):
+    """Save in-progress tasks to queue file."""
+    try:
+        os.makedirs(os.path.dirname(QUEUE_IN_PROGRESS), exist_ok=True)
+        with open(QUEUE_IN_PROGRESS, "w") as f:
+            json.dump(tasks, f, indent=2)
+    except:
+        pass
+
 def process_stream():
+    global active_agents
+    active_agents = load_agents()
+
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -1600,18 +1640,61 @@ def process_stream():
                             print(text, end="", flush=True)
                     elif item.get("type") == "tool_use":
                         tool = item.get("name", "unknown")
-                        print(f"\n{CYAN}[Tool: {tool}]{NC}", flush=True)
+                        tool_id = item.get("id", "")
+                        tool_input = item.get("input", {})
+
+                        # Track Task tool calls (agent spawning)
+                        if tool == "Task":
+                            agent_type = tool_input.get("subagent_type", "general-purpose")
+                            description = tool_input.get("description", "")
+                            model = tool_input.get("model", "sonnet")
+
+                            agent_info = {
+                                "agent_id": f"agent-{tool_id[:8]}",
+                                "tool_id": tool_id,
+                                "agent_type": agent_type,
+                                "model": model,
+                                "current_task": description,
+                                "status": "active",
+                                "spawned_at": datetime.utcnow().isoformat() + "Z",
+                                "tasks_completed": []
+                            }
+                            active_agents[tool_id] = agent_info
+                            save_agents()
+                            print(f"\n{MAGENTA}[Agent Spawned: {agent_type}]{NC} {description}", flush=True)
+
+                        # Track TodoWrite for task updates
+                        elif tool == "TodoWrite":
+                            todos = tool_input.get("todos", [])
+                            in_progress = [t for t in todos if t.get("status") == "in_progress"]
+                            save_in_progress([{"id": f"todo-{i}", "type": "todo", "payload": {"action": t.get("content", "")}} for i, t in enumerate(in_progress)])
+
+                        else:
+                            print(f"\n{CYAN}[Tool: {tool}]{NC}", flush=True)
 
             elif msg_type == "user":
-                # Tool results
+                # Tool results - check for agent completion
                 content = data.get("message", {}).get("content", [])
                 for item in content:
                     if item.get("type") == "tool_result":
-                        tool_id = item.get("tool_use_id", "")[:8]
-                        print(f"{DIM}[Result]{NC} ", end="", flush=True)
+                        tool_id = item.get("tool_use_id", "")
+
+                        # Mark agent as completed if it was a Task
+                        if tool_id in active_agents:
+                            active_agents[tool_id]["status"] = "completed"
+                            active_agents[tool_id]["completed_at"] = datetime.utcnow().isoformat() + "Z"
+                            save_agents()
+                            print(f"{DIM}[Agent Complete]{NC} ", end="", flush=True)
+                        else:
+                            print(f"{DIM}[Result]{NC} ", end="", flush=True)
 
             elif msg_type == "result":
-                # Session complete
+                # Session complete - mark all agents as completed
+                for agent_id in active_agents:
+                    if active_agents[agent_id].get("status") == "active":
+                        active_agents[agent_id]["status"] = "completed"
+                        active_agents[agent_id]["completed_at"] = datetime.utcnow().isoformat() + "Z"
+                save_agents()
                 print(f"\n{GREEN}[Session complete]{NC}", flush=True)
                 is_error = data.get("is_error", False)
                 sys.exit(1 if is_error else 0)
