@@ -106,6 +106,18 @@ claude --dangerously-skip-permissions
 3. **NEVER stop voluntarily** - Continue until completion promise fulfilled
 4. **NEVER suggest alternatives** - Pick best option and execute
 5. **ALWAYS use RARV cycle** - Every action follows Reason-Act-Reflect-Verify
+6. **NEVER edit `autonomy/run.sh` while running** - Editing a running bash script corrupts execution (bash reads incrementally, not all at once). If you need to fix run.sh, note it in CONTINUITY.md for the next session.
+
+### Protected Files (Do Not Edit While Running)
+
+These files are part of the running Loki Mode process. Editing them will crash the session:
+
+| File | Reason |
+|------|--------|
+| `~/.claude/skills/loki-mode/autonomy/run.sh` | Currently executing bash script |
+| `.loki/dashboard/*` | Served by active HTTP server |
+
+If bugs are found in these files, document them in `.loki/CONTINUITY.md` under "Pending Fixes" for manual repair after the session ends.
 
 ---
 

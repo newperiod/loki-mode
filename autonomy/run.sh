@@ -56,6 +56,28 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+#===============================================================================
+# Self-Copy Protection
+# Bash reads scripts incrementally, so editing a running script corrupts execution.
+# Solution: Copy ourselves to /tmp and run from there. The original can be safely edited.
+#===============================================================================
+if [[ -z "${LOKI_RUNNING_FROM_TEMP:-}" ]]; then
+    TEMP_SCRIPT="/tmp/loki-run-$$.sh"
+    cp "${BASH_SOURCE[0]}" "$TEMP_SCRIPT"
+    chmod +x "$TEMP_SCRIPT"
+    export LOKI_RUNNING_FROM_TEMP=1
+    export LOKI_ORIGINAL_SCRIPT_DIR="$SCRIPT_DIR"
+    export LOKI_ORIGINAL_PROJECT_DIR="$PROJECT_DIR"
+    exec "$TEMP_SCRIPT" "$@"
+fi
+
+# Restore original paths when running from temp
+SCRIPT_DIR="${LOKI_ORIGINAL_SCRIPT_DIR:-$SCRIPT_DIR}"
+PROJECT_DIR="${LOKI_ORIGINAL_PROJECT_DIR:-$PROJECT_DIR}"
+
+# Clean up temp script on exit
+trap 'rm -f "${BASH_SOURCE[0]}" 2>/dev/null' EXIT
+
 # Configuration
 MAX_RETRIES=${LOKI_MAX_RETRIES:-50}
 BASE_WAIT=${LOKI_BASE_WAIT:-60}
