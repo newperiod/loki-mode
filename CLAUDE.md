@@ -18,6 +18,7 @@ claude --dangerously-skip-permissions
 SKILL.md                    # Main skill definition (read this first)
 references/                 # Detailed documentation (loaded progressively)
   openai-patterns.md        # OpenAI Agents SDK: guardrails, tripwires, handoffs
+  lab-research-patterns.md  # DeepMind + Anthropic: Constitutional AI, debate
   advanced-patterns.md      # 2025 research patterns (MAR, Iter-VF, GoalAct)
   tool-orchestration.md     # ToolOrchestra-inspired efficiency & rewards
   memory-system.md          # Episodic/semantic memory architecture
@@ -72,7 +73,7 @@ Every iteration follows: **R**eason -> **A**ct -> **R**eflect -> **V**erify
 
 ### Version Numbering
 Follows semantic versioning: MAJOR.MINOR.PATCH
-- Current: v2.30.0
+- Current: v2.31.0
 - MINOR bump for new features
 - PATCH bump for fixes
 
@@ -91,14 +92,28 @@ Follows semantic versioning: MAJOR.MINOR.PATCH
 
 ## Research Foundation
 
-Built on 2025 research:
-- OpenAI Agents SDK (guardrails, tripwires, handoffs, tracing)
+Built on 2025 research from three major AI labs:
+
+**OpenAI:**
+- Agents SDK (guardrails, tripwires, handoffs, tracing)
 - AGENTS.md / Agentic AI Foundation (AAIF) standards
+
+**Google DeepMind:**
+- SIMA 2 (self-improvement, hierarchical reasoning)
+- Gemini Robotics (VLA models, planning)
+- Dreamer 4 (world model training)
+- Scalable Oversight via Debate
+
+**Anthropic:**
+- Constitutional AI (principles-based self-critique)
+- Alignment Faking Detection (sleeper agent probes)
+- Claude Code Best Practices (Explore-Plan-Code)
+
+**Academic:**
 - CONSENSAGENT (anti-sycophancy)
 - GoalAct (hierarchical planning)
 - A-Mem/MIRIX (memory systems)
 - Multi-Agent Reflexion (MAR)
-- Iter-VF (verification patterns)
 - NVIDIA ToolOrchestra (efficiency metrics)
 
-See `references/openai-patterns.md` and `references/advanced-patterns.md` for details.
+See `references/openai-patterns.md`, `references/lab-research-patterns.md`, and `references/advanced-patterns.md`.

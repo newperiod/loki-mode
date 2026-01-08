@@ -5,6 +5,67 @@ All notable changes to Loki Mode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.31.0] - 2026-01-07
+
+### Added - DeepMind + Anthropic Research Patterns
+
+**Research sources analyzed:**
+
+**Google DeepMind:**
+- [SIMA 2: Generalist AI Agent](https://deepmind.google/blog/sima-2-an-agent-that-plays-reasons-and-learns-with-you-in-virtual-3d-worlds/)
+- [Gemini Robotics 1.5](https://deepmind.google/blog/gemini-robotics-15-brings-ai-agents-into-the-physical-world/)
+- [Dreamer 4: World Model Training](https://danijar.com/project/dreamer4/)
+- [Scalable AI Safety via Debate](https://deepmind.google/research/publications/34920/)
+- [Amplified Oversight](https://deepmindsafetyresearch.medium.com/human-ai-complementarity-a-goal-for-amplified-oversight-0ad8a44cae0a)
+- [Technical AGI Safety Approach](https://arxiv.org/html/2504.01849v1)
+
+**Anthropic:**
+- [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback)
+- [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents)
+- [Claude Code Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)
+- [Sleeper Agents Detection](https://www.anthropic.com/research/probes-catch-sleeper-agents)
+- [Alignment Faking](https://www.anthropic.com/research/alignment-faking)
+
+**New Reference File: `references/lab-research-patterns.md`**
+Comprehensive guide covering:
+- **World Model Training** (Dreamer 4): Train agents inside simulation for safety
+- **Self-Improvement Loop** (SIMA 2): Gemini-based teacher + learned reward model
+- **Hierarchical Reasoning** (Gemini Robotics): High-level planner + low-level executor
+- **Scalable Oversight via Debate**: Pit AI capabilities against each other
+- **Constitutional AI**: Principles-based self-critique and revision
+- **Sleeper Agent Detection**: Defection probes for anomaly detection
+- **Explore-Plan-Code**: Research -> Plan -> Implement workflow
+- **Extended Thinking Levels**: think < think hard < ultrathink
+
+**New Patterns in SKILL.md:**
+- **Explore-Plan-Code**: `Research files -> Create plan (NO CODE) -> Execute plan`
+- **Constitutional Self-Critique**: `Generate -> Critique against principles -> Revise`
+- **Hierarchical Reasoning**: `High-level planner -> Skill selection -> Local executor`
+- **Debate Verification**: `Proponent defends -> Opponent challenges -> Synthesize`
+
+**New Sections in SKILL.md:**
+- **Constitutional AI Principles**: Loki Mode constitution with 8 core principles
+- **Debate-Based Verification**: For architecture decisions and security changes
+
+### Changed
+- SKILL.md: Updated version to 2.31.0, ~530 lines
+- SKILL.md: Added 4 new patterns to Essential Patterns section
+- SKILL.md: Added Constitutional AI Principles section
+- SKILL.md: Added Debate-Based Verification section
+- References: Added lab-research-patterns.md to table
+
+### Research Insights Applied
+
+| Lab | Key Insight | Loki Mode Implementation |
+|-----|-------------|-------------------------|
+| DeepMind | "Hierarchical reasoning separates planning from execution" | Orchestrator = planner, agents = executors |
+| DeepMind | "Debate can verify beyond human capability" | Debate verification for critical changes |
+| Anthropic | "Self-critique against principles is more robust" | Constitutional AI workflow |
+| Anthropic | "Explore before planning, plan before coding" | Explore-Plan-Code pattern |
+| Anthropic | "Extended thinking levels for complexity" | Thinking mode in model selection |
+
+---
+
 ## [2.30.0] - 2026-01-07
 
 ### Added - OpenAI Agent Patterns

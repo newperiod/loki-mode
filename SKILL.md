@@ -5,8 +5,8 @@ description: Multi-agent autonomous startup system for Claude Code. Triggers on 
 
 # Loki Mode - Multi-Agent Autonomous Startup System
 
-> **Version 2.30.0** | PRD to Production | Zero Human Intervention
-> Research-enhanced with 2025 patterns: OpenAI Agents SDK, Guardrails/Tripwires, Multi-Tiered Fallbacks, ToolOrchestra Efficiency
+> **Version 2.31.0** | PRD to Production | Zero Human Intervention
+> Research-enhanced: OpenAI SDK, DeepMind (SIMA/Dreamer), Anthropic (Constitutional AI), ToolOrchestra
 
 ---
 
@@ -74,11 +74,13 @@ Development <- QA <- Deployment <- Business Ops <- Growth Loop
 **Guardrails:** `Input Guard (BLOCK) -> Execute -> Output Guard (VALIDATE)` (OpenAI SDK)
 **Tripwires:** `Validation fails -> Halt execution -> Escalate or retry`
 **Fallbacks:** `Try primary -> Model fallback -> Workflow fallback -> Human escalation`
-**Problem Solving:** `Analyze -> Plan (NO CODE) -> Implement`
+**Explore-Plan-Code:** `Research files -> Create plan (NO CODE) -> Execute plan` (Anthropic)
 **Self-Verification:** `Code -> Test -> Fail -> Learn -> Update CONTINUITY.md -> Retry`
+**Constitutional Self-Critique:** `Generate -> Critique against principles -> Revise` (Anthropic)
 **Memory Consolidation:** `Episodic (trace) -> Pattern Extraction -> Semantic (knowledge)`
-**Hierarchical Planning:** `Global Goal -> High-Level Skills -> Local Execution`
+**Hierarchical Reasoning:** `High-level planner -> Skill selection -> Local executor` (DeepMind)
 **Tool Orchestration:** `Classify Complexity -> Select Agents -> Track Efficiency -> Reward Learning`
+**Debate Verification:** `Proponent defends -> Opponent challenges -> Synthesize` (DeepMind)
 **Handoff Callbacks:** `on_handoff -> Pre-fetch context -> Transfer with data` (OpenAI SDK)
 
 ---
@@ -396,6 +398,60 @@ Context Priority:
 
 ---
 
+## Constitutional AI Principles (Anthropic)
+
+**Self-critique against explicit principles, not just learned preferences.**
+
+### Loki Mode Constitution
+
+```yaml
+core_principles:
+  - "Never delete production data without explicit backup"
+  - "Never commit secrets or credentials to version control"
+  - "Never bypass quality gates for speed"
+  - "Always verify tests pass before marking task complete"
+  - "Never claim completion without running actual tests"
+  - "Prefer simple solutions over clever ones"
+  - "Document decisions, not just code"
+  - "When unsure, reject action or flag for review"
+```
+
+### Self-Critique Workflow
+
+```
+1. Generate response/code
+2. Critique against each principle
+3. Revise if any principle violated
+4. Only then proceed with action
+```
+
+See `references/lab-research-patterns.md` for Constitutional AI implementation.
+
+---
+
+## Debate-Based Verification (DeepMind)
+
+**For critical changes, use structured debate between AI critics.**
+
+```
+Proponent (defender)  -->  Presents proposal with evidence
+         |
+         v
+Opponent (challenger) -->  Finds flaws, challenges claims
+         |
+         v
+Synthesizer           -->  Weighs arguments, produces verdict
+         |
+         v
+If disagreement persists --> Escalate to human
+```
+
+**Use for:** Architecture decisions, security-sensitive changes, major refactors.
+
+See `references/lab-research-patterns.md` for debate verification details.
+
+---
+
 ## Exit Conditions
 
 | Condition | Action |
@@ -467,6 +523,7 @@ Detailed documentation is split into reference files for progressive loading:
 | `references/core-workflow.md` | Full RARV cycle, CONTINUITY.md template, autonomy rules |
 | `references/quality-control.md` | Quality gates, anti-sycophancy, blind review, severity blocking |
 | `references/openai-patterns.md` | OpenAI Agents SDK: guardrails, tripwires, handoffs, fallbacks |
+| `references/lab-research-patterns.md` | DeepMind + Anthropic: Constitutional AI, debate, world models |
 | `references/advanced-patterns.md` | 2025 research: MAR, Iter-VF, GoalAct, CONSENSAGENT |
 | `references/tool-orchestration.md` | ToolOrchestra patterns: efficiency, rewards, dynamic selection |
 | `references/memory-system.md` | Episodic/semantic memory, consolidation, Zettelkasten linking |
@@ -482,4 +539,4 @@ Detailed documentation is split into reference files for progressive loading:
 
 ---
 
-**Version:** 2.30.0 | **Lines:** ~470 | **Research-Enhanced with OpenAI Agent Patterns**
+**Version:** 2.31.0 | **Lines:** ~530 | **Research-Enhanced: OpenAI + DeepMind + Anthropic**
